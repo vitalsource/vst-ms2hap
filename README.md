@@ -1,0 +1,1 @@
+# HAproxy2MemoryStore
