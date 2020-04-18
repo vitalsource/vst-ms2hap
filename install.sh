@@ -21,7 +21,7 @@ if [ -n "${gcs_bucket}" ]; then
         if [ -n "${value}" ]; then
             eval "${key}=\"${value}\""
         else
-            echo "ERROR:  Could not locate the command line utility '${cmd_util}'" >2&
+            echo "ERROR:  Could not locate the command line utility '${cmd_util}'" >&2
             dont_stop="false"
         fi
         
