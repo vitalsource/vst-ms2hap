@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -x
 
-PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/opt/puppetlabs/puppet/bin"
+PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/opt/puppetlabs/puppet/bin:/snap/bin"
 TERM="vt100"
 export TERM PATH
 
