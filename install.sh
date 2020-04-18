@@ -69,13 +69,12 @@ if [ -n "${gcs_bucket}" ]; then
                     awk '{print $0}' ./etc/haproxy/haproxy.conf.defaults >> "${new_haproxy_config}"
                 fi
 
-                let proxy_port_prefix=${element_counter}+1
                 kv_pair=$(jq ".[${element_counter}]" "${temp_dir}/${target_file}" | egrep ':' | sed -e 's|"||g' -e 's| ||g')
                 cms_internal_dns=$(echo "${kv_pair}" | awk -F':' '{print $1}' | awk -F'_' '{print $1}')
                 cms_port=$(echo "${kv_pair}" | awk -F':' '{print $1}' | awk -F'_' '{print $NF}') 
                 cms_name=$(echo "${kv_pair}" | awk -F':' '{print $NF}')
                 normalized_cms_name=$(echo "${cms_name}" | sed -e 's|\.|_|g' -e 's|-|_|g')
-                proxy_port="${proxy_port_prefix}${cms_port}"
+                let proxy_port=${cms_port}+${element_counter}
 
                 # Add the frontend for this node to the config file
                 sed -e "s|{{NORMALIZED_CMS_NAME}}|${normalized_cms_name}|g" \
