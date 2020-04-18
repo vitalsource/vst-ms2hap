@@ -11,8 +11,7 @@ first_run_canary_file="/etc/ms2hapaga"
 
 if [ -n "${gcs_bucket}" ]; then
     dont_stop="true"
-    #needed_commands="facter gsutil jq"
-    needed_commands="gsutil jq"
+    needed_commands="facter gsutil jq"
 
     for cmd_util in ${needed_commands} ; do
         key="my_${cmd_util}"
@@ -29,8 +28,7 @@ if [ -n "${gcs_bucket}" ]; then
 
     # Grab the json file that corresponds to our GCP project
     if [ "${dont_stop}" = "true" ]; then
-        #gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
-        gcp_project="vst-main-nonprod"
+        gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
 
         if [ -n "${gcp_project}" ]; then
             cwd=$(pwd)
@@ -128,4 +126,6 @@ if [ -n "${gcs_bucket}" ]; then
     fi
 
 fi
+
+exit 0
 
