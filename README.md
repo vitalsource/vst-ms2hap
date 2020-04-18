@@ -1,4 +1,4 @@
-# HAproxy2MemoryStore
+# ms2hap - MemoryStore to HA Proxy and back again
 
 ASSUMPTIONS:
 - Linux Distro == Ubuntu/Debian
