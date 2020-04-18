@@ -1,4 +1,4 @@
 frontend fe__{{NORMALIZED_CMS_NAME}}
     bind *:{{PROXY_PORT}} name redis__{{PROXY_PORT}}
-    default_backend be_{{NORMALIZED_CMS_NAME}}
+    default_backend be__{{NORMALIZED_CMS_NAME}}
 
