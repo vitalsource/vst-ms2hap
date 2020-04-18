@@ -1,0 +1,11 @@
+backend be__{{NORMALIZED_CMS_NAME}}
+    option tcp-check
+    tcp-check connect
+    tcp-check send PING\r\n
+    tcp-check expect string +PONG
+    tcp-check send info\ replication\r\n
+    tcp-check expect string role:master
+    tcp-check send QUIT\r\n
+    tcp-check expect string +OK
+    server {{NORMALIZED_CMS_NAME}}_{{PROXY_PORT}} {{CMS_INTERNAL_DNS}}:{{CMS_PORT}} check inter 1s
+
