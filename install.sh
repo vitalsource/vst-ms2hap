@@ -13,11 +13,10 @@ etc_motd_dir="/etc/update-motd.d"
 etc_motd_file="80-memorystore2redis"
 
 if [ -n "${gcs_bucket}" ]; then
-    dont_stop="true"
+    #needed_commands="gsutil jq"     ### TESTING
+    needed_commands="facter gsutil jq"
 
-    # TESTING
-    #needed_commands="facter gsutil jq"
-    needed_commands="gsutil jq"
+    dont_stop="true"
 
     for cmd_util in ${needed_commands} ; do
         key="my_${cmd_util}"
@@ -34,10 +33,9 @@ if [ -n "${gcs_bucket}" ]; then
 
     # Grab the json file that corresponds to our GCP project
     if [ "${dont_stop}" = "true" ]; then
-        # TESTING
-        gcp_project="vst-main-nonprod"
+        #gcp_project="vst-main-nonprod"     ### TESTING
+        gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
 
-        #gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
         normalized_host_name=$(hostname | awk -F'.' '{print $1}')
 
         if [ -n "${gcp_project}" ]; then
