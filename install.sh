@@ -129,11 +129,12 @@ if [ -n "${gcs_bucket}" ]; then
         # The remaining setup - only run this once
         if [ ! -s "${first_run_canary_file}" -a "${this_os}" = "linux" ]; then
             echo "$(date)" > "${first_run_canary_file}"
+            etc_cron_link="/etc/cron.daily/update_ms2hap"
 
-            if [ -e "/etc/cron.daily/update_ms2hap" ]; then
+            if [ ! -e "${etc_cron_link}" ]; then
                 this_script_dir="$(dirname $(realpath -L "${0}"))"
                 this_script_name=$(basename "${0}")
-                ln -s "${this_script_dir}/${this_script_name}" /etc/cron.daily/update_ms2hap
+                ln -s "${this_script_dir}/${this_script_name}" "${etc_cron_link}"
             fi
 
             if [ -d ./etc ]; then
