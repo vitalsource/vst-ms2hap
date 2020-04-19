@@ -4,5 +4,5 @@ echo
 echo "=============================================="
 echo "Mapping of MemoryStore nodes to HA Proxy ports"
 echo "----------------------------------------------"
-egrep "^ *server" /etc/haproxy/haproxy.cfg | awk '{print $3 " \t -> " $2}'
+egrep "^ *server" /etc/haproxy/haproxy.cfg | awk '{print $3 " \t -> " $2}' | sed -e 's|_|:|g'
 echo
