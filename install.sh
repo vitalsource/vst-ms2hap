@@ -8,10 +8,16 @@ export TERM PATH
 gcs_bucket="${1}"
 system_haproxy_config="/etc/haproxy/haproxy.cfg"
 first_run_canary_file="/etc/ms2hapaga"
+this_os=$(uname -s | tr '[A-Z]' '[a-z]')
+etc_motd_dir="/etc/update-motd.d"
+etc_motd_file="80-memorystore2redis"
 
 if [ -n "${gcs_bucket}" ]; then
     dont_stop="true"
-    needed_commands="facter gsutil jq"
+
+    # TESTING
+    #needed_commands="facter gsutil jq"
+    needed_commands="gsutil jq"
 
     for cmd_util in ${needed_commands} ; do
         key="my_${cmd_util}"
@@ -28,7 +34,11 @@ if [ -n "${gcs_bucket}" ]; then
 
     # Grab the json file that corresponds to our GCP project
     if [ "${dont_stop}" = "true" ]; then
-        gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
+        # TESTING
+        gcp_project="vst-main-nonprod"
+
+        #gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
+        normalized_host_name=$(hostname | awk -F'.' '{print $1}')
 
         if [ -n "${gcp_project}" ]; then
             cwd=$(pwd)
@@ -80,10 +90,11 @@ if [ -n "${gcs_bucket}" ]; then
                 ./etc/haproxy/haproxy.conf.frontend >> "${new_haproxy_config}"
 
                 # Add the backend for this node to the config file
-                sed -e "s|{{NORMALIZED_CMS_NAME}}|${normalized_cms_name}|g" \
-                    -e "s|{{PROXY_PORT}}|${proxy_port}|g"                   \
-                    -e "s|{{CMS_INTERNAL_DNS}}|${cms_internal_dns}|g"       \
-                    -e "s|{{CMS_PORT}}|${cms_port}|g"                       \
+                sed -e "s|{{NORMALIZED_CMS_NAME}}|${normalized_cms_name}|g"   \
+                    -e "s|{{NORMALIZED_HOST_NAME}}|${normalized_host_name}|g" \
+                    -e "s|{{PROXY_PORT}}|${proxy_port}|g"                     \
+                    -e "s|{{CMS_INTERNAL_DNS}}|${cms_internal_dns}|g"         \
+                    -e "s|{{CMS_PORT}}|${cms_port}|g"                         \
                 ./etc/haproxy/haproxy.conf.backend >> "${new_haproxy_config}"
 
                 let element_counter+=1
@@ -91,18 +102,21 @@ if [ -n "${gcs_bucket}" ]; then
             done
 
             # Move the new conf file into position if differences are detected
-            cmp -s "${new_haproxy_config}" "${system_haproxy_config}"
+            if [ "${this_os}" = "linux" ]; then
+                cmp -s "${new_haproxy_config}" "${system_haproxy_config}"
 
-            if [ ${?} -gt 0 ]; then
-                cp "${new_haproxy_config}" "${system_haproxy_config}"
-                systemctl enable haproxy
-                systemctl restart haproxy
+                if [ ${?} -gt 0 ]; then
+                    cp "${new_haproxy_config}" "${system_haproxy_config}"
+                    systemctl enable haproxy
+                    systemctl restart haproxy
+                fi
+
             fi
 
         fi
 
         # The remaining setup - only run this once
-        if [ ! -s "${first_run_canary_file}" ]; then
+        if [ ! -s "${first_run_canary_file}" -a "${this_os}" = "linux" ]; then
             echo "$(date)" > "${first_run_canary_file}"
 
             if [ -d ./etc ]; then
@@ -119,6 +133,11 @@ if [ -n "${gcs_bucket}" ]; then
                     awk '{print $0}' .${security_limits_conf} >> ${security_limits_conf}
                 fi
             
+            fi
+
+            if [ ! -s "${etc_motd_dir}/${etc_motd_file}" ]; then
+                cp .${etc_motd_dir}/${etc_motd_file} ${etc_motd_dir}
+                chmod 755 ${etc_motd_dir}/${etc_motd_file}
             fi
     
         fi
