@@ -8,16 +8,18 @@ export TERM PATH
 gcs_bucket="${1}"
 system_haproxy_config="/etc/haproxy/haproxy.cfg"
 first_run_canary_file="/etc/ms2hapaga"
-this_os=$(uname -s | tr '[A-Z]' '[a-z]')
 etc_motd_dir="/etc/update-motd.d"
 etc_motd_file="80-memorystore2redis"
 
+# We must have a bucket from which to pull our json config
 if [ -n "${gcs_bucket}" ]; then
     #needed_commands="gsutil jq"     ### TESTING
     needed_commands="facter gsutil jq"
 
     dont_stop="true"
 
+
+    # Establish our commands that will be used later
     for cmd_util in ${needed_commands} ; do
         key="my_${cmd_util}"
         value=$(which ${cmd_util} 2> /dev/null)
@@ -31,17 +33,27 @@ if [ -n "${gcs_bucket}" ]; then
         
     done
 
-    # Grab the json file that corresponds to our GCP project
+    # Grab the json file that corresponds to our GCP project and GCP region
     if [ "${dont_stop}" = "true" ]; then
+        this_os=$(uname -s | tr '[A-Z]' '[a-z]')
+
         #gcp_project="vst-main-nonprod"     ### TESTING
+        #gcp_region="us-east1"              ### TESTING
         gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
+        gcp_region=$(${my_facter} gce.instance.zone 2> /dev/null | sed -e 's|\-[a-z]$||g')
 
-        normalized_host_name=$(hostname | awk -F'.' '{print $1}')
+        normalized_host_name=$(${my_facter} gce.instance.name 2> /dev/null)
 
+        if [ -z "${normalized_host_name}" ]; then
+            normalized_host_name=$(hostname | awk -F'.' '{print $1}')
+        fi
+
+        # Here we have computed our data driven resources and are ready to 
+        # retrieve our GCP project and GCP region dependant json config file
         if [ -n "${gcp_project}" ]; then
             cwd=$(pwd)
             temp_dir="$(mktemp -d)"
-            target_file="${gcp_project}.json"
+            target_file="${gcp_project}-${gcp_region}.json"
             cd "${temp_dir}"
             gsutil cp gs://${gcs_bucket}/${target_file} . > /dev/null 2>&1
             cd "${cwd}"
@@ -59,6 +71,7 @@ if [ -n "${gcs_bucket}" ]; then
 
             fi
 
+            # Build the new haproxy config file from the config data
             new_haproxy_config="/tmp/$$/haproxy.$(date +%Y%m%d).conf"
 
             while [ ${host_count} -gt 0 ]; do
@@ -116,6 +129,12 @@ if [ -n "${gcs_bucket}" ]; then
         # The remaining setup - only run this once
         if [ ! -s "${first_run_canary_file}" -a "${this_os}" = "linux" ]; then
             echo "$(date)" > "${first_run_canary_file}"
+
+            if [ -e "/etc/cron.daily/update_ms2hap" ]; then
+                this_script_dir="$(dirname $(realpath -L "${0}"))"
+                this_script_name=$(basename "${0}")
+                ln -s "${this_script_dir}/${this_script_name}" /etc/cron.daily/update_ms2hap
+            fi
 
             if [ -d ./etc ]; then
                 sysctl_conf="/etc/sysctl.conf"
