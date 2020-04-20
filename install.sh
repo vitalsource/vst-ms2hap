@@ -5,11 +5,24 @@ PATH="/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin:/opt/puppetla
 TERM="vt100"
 export TERM PATH
 
-gcs_bucket="${1}"
 system_haproxy_config="/etc/haproxy/haproxy.cfg"
 first_run_canary_file="/etc/ms2hapaga"
 etc_motd_dir="/etc/update-motd.d"
 etc_motd_file="80-memorystore2redis"
+
+my_name=$(basename "${0}")
+
+case "${my_name}" in
+
+    update_ms2hap)
+        gcs_bucket=$(awk '{print $NF}' "${first_run_canary_file}")
+    ;;
+
+    *)
+        gcs_bucket="${1}"
+    ;;
+
+esac
 
 # We must have a bucket from which to pull our json config
 if [ -n "${gcs_bucket}" ]; then
@@ -17,7 +30,6 @@ if [ -n "${gcs_bucket}" ]; then
     needed_commands="facter gsutil jq"
 
     dont_stop="true"
-
 
     # Establish our commands that will be used later
     for cmd_util in ${needed_commands} ; do
@@ -128,7 +140,7 @@ if [ -n "${gcs_bucket}" ]; then
 
         # The remaining setup - only run this once
         if [ ! -s "${first_run_canary_file}" -a "${this_os}" = "linux" ]; then
-            echo "$(date)" > "${first_run_canary_file}"
+            echo "$(date) ${gcs_bucket}" > "${first_run_canary_file}"
             etc_cron_link="/etc/cron.daily/update_ms2hap"
 
             if [ ! -e "${etc_cron_link}" ]; then
