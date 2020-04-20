@@ -10,9 +10,10 @@ first_run_canary_file="/etc/ms2hapaga"
 etc_motd_dir="/etc/update-motd.d"
 etc_motd_file="80-memorystore2redis"
 
-my_name=$(basename "${0}")
+my_script_dir="$(dirname $(realpath -L "${0}"))"
+my_script_name=$(basename "${0}")
 
-case "${my_name}" in
+case "${my_script_name}" in
 
     update_ms2hap)
         gcs_bucket=$(awk '{print $NF}' "${first_run_canary_file}")
@@ -96,8 +97,8 @@ if [ -n "${gcs_bucket}" ]; then
                     fi
 
                     echo "Synthesizing haproxy config file '${new_haproxy_config}'"
-                    awk '{print $0}' ./etc/haproxy/haproxy.conf.global    > "${new_haproxy_config}"
-                    awk '{print $0}' ./etc/haproxy/haproxy.conf.defaults >> "${new_haproxy_config}"
+                    awk '{print $0}' ${my_script_dir}/etc/haproxy/haproxy.conf.global    > "${new_haproxy_config}"
+                    awk '{print $0}' ${my_script_dir}/etc/haproxy/haproxy.conf.defaults >> "${new_haproxy_config}"
                 fi
 
                 kv_pair=$(jq ".[${element_counter}]" "${temp_dir}/${target_file}" | egrep ':' | sed -e 's|"||g' -e 's| ||g')
@@ -110,7 +111,7 @@ if [ -n "${gcs_bucket}" ]; then
                 # Add the frontend for this node to the config file
                 sed -e "s|{{NORMALIZED_CMS_NAME}}|${normalized_cms_name}|g" \
                     -e "s|{{PROXY_PORT}}|${proxy_port}|g"                   \
-                ./etc/haproxy/haproxy.conf.frontend >> "${new_haproxy_config}"
+                ${my_script_dir}/etc/haproxy/haproxy.conf.frontend >> "${new_haproxy_config}"
 
                 # Add the backend for this node to the config file
                 sed -e "s|{{NORMALIZED_CMS_NAME}}|${normalized_cms_name}|g"   \
@@ -118,7 +119,7 @@ if [ -n "${gcs_bucket}" ]; then
                     -e "s|{{PROXY_PORT}}|${proxy_port}|g"                     \
                     -e "s|{{CMS_INTERNAL_DNS}}|${cms_internal_dns}|g"         \
                     -e "s|{{CMS_PORT}}|${cms_port}|g"                         \
-                ./etc/haproxy/haproxy.conf.backend >> "${new_haproxy_config}"
+                ${my_script_dir}/etc/haproxy/haproxy.conf.backend >> "${new_haproxy_config}"
 
                 let element_counter+=1
                 let host_count-=1
@@ -144,9 +145,7 @@ if [ -n "${gcs_bucket}" ]; then
             etc_cron_link="/etc/cron.daily/update_ms2hap"
 
             if [ ! -e "${etc_cron_link}" ]; then
-                this_script_dir="$(dirname $(realpath -L "${0}"))"
-                this_script_name=$(basename "${0}")
-                ln -s "${this_script_dir}/${this_script_name}" "${etc_cron_link}"
+                ln -s "${my_script_dir}/${my_script_name}" "${etc_cron_link}"
             fi
 
             if [ -d ./etc ]; then
@@ -155,18 +154,18 @@ if [ -n "${gcs_bucket}" ]; then
                 haproxy_conf="/etc/haproxy/haproxy.conf"
             
                 if [ -f .${sysctl_conf} ]; then
-                    awk '{print $0}' .${sysctl_conf} >> ${sysctl_conf}
+                    awk '{print $0}' ${my_script_dir}${sysctl_conf} >> ${sysctl_conf}
                     sysctl -p
                 fi
             
                 if [ -e .${security_limits_conf} ]; then
-                    awk '{print $0}' .${security_limits_conf} >> ${security_limits_conf}
+                    awk '{print $0}' ${my_script_dir}${security_limits_conf} >> ${security_limits_conf}
                 fi
             
             fi
 
             if [ ! -s "${etc_motd_dir}/${etc_motd_file}" ]; then
-                cp .${etc_motd_dir}/${etc_motd_file} ${etc_motd_dir}
+                cp ${my_script_dir}${etc_motd_dir}/${etc_motd_file} ${etc_motd_dir}
                 chmod 755 ${etc_motd_dir}/${etc_motd_file}
             fi
     
