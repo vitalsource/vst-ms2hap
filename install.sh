@@ -39,7 +39,7 @@ if [ -n "${gcs_bucket}" ]; then
 
         #gcp_project="vst-main-nonprod"     ### TESTING
         #gcp_region="us-east1"              ### TESTING
-        gcp_project=$(${my_facter} gce.project.projectId 2> /defv/null)
+        gcp_project=$(${my_facter} gce.project.projectId 2> /dev/null)
         gcp_region=$(${my_facter} gce.instance.zone 2> /dev/null | sed -e 's|\-[a-z]$||g')
 
         normalized_host_name=$(${my_facter} gce.instance.name 2> /dev/null)
