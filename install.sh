@@ -126,7 +126,7 @@ if [ -n "${gcs_bucket}" ]; then
             done
 
             # Move the new conf file into position if differences are detected
-            if [ "${this_os}" = "linux" ]; then
+            if [ "${this_os}" = "linux" -a -s "${new_haproxy_config}" ]; then
                 cmp -s "${new_haproxy_config}" "${system_haproxy_config}"
 
                 if [ ${?} -gt 0 ]; then
